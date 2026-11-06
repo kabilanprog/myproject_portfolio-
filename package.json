@@ -1,0 +1,24 @@
+{
+  "name": "kabilan-portfolio",
+  "version": "1.0.0",
+  "description": "Kabilan - Independent Freelancer, Creative Developer, UI/UX Designer & Photographer. Interactive portfolio with Verlet physics pull-cord switch, 3D doors, and interactive timeline.",
+  "type": "module",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "python -m http.server 3000",
+    "serve": "npx serve ."
+  },
+  "keywords": [
+    "portfolio",
+    "kabilan",
+    "creative-developer",
+    "ui-ux",
+    "photography",
+    "physics",
+    "canvas",
+    "3d-doors",
+    "dark-aesthetic"
+  ],
+  "author": "Kabilan",
+  "license": "MIT"
+}
