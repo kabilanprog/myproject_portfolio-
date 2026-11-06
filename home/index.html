@@ -2259,7 +2259,7 @@ const toggleMode = () => setMode(getMode() === 'dark' ? 'light' : 'dark');
   const toWall = msg => { try { frame?.contentWindow?.postMessage(msg, location.origin === 'null' ? '*' : location.origin); } catch (e) {} };
   // start fetching the wall once the doors are near, so a click never waits
   if ('IntersectionObserver' in window){
-    const near = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ near.disconnect(); setTimeout(() => { warm(4); setTimeout(() => [0, 1, 2, 3].forEach(warm), 1500); }, 600); } }, { rootMargin: '200px' });
+    const near = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ near.disconnect(); warm(0); } }, { rootMargin: '200px' });
     near.observe(sec);
   }
 

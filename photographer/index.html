@@ -197,6 +197,9 @@ html[data-mode="dark"] .skel::after{background-image:linear-gradient(100deg,#231
   /* photos run in rows of the same orientation, each row its own endless strip, so the gaps
      between neighbours are the same everywhere; sizes are the same as before */
   function buildRows(){
+
+    if (!P || !P.length){ ROWS = []; PH = 1000; PW = 1000; patch = []; window.__rows = ROWS; return; }
+
     const mobile = vw < 640;
     const side = (mobile ? vw * .56 : Math.min(380, vh * .44)) * .93;   // same apparent size as before (the depth scale is gone)
     const A = side * side, minLen = vw * (mobile ? 2 : 1.7);            // rows long enough that no photo shows twice at once
@@ -314,7 +317,7 @@ html[data-mode="dark"] .skel::after{background-image:linear-gradient(100deg,#231
   const mod = (a, b) => ((a % b) + b) % b;
   /* ---- camera with inertia ---- */
   let camX = 0, camY = 0, vx = 0, vy = 0, dragging = false, moved = 0, lastT = 0;
-  function centre(){ camX = PW * .3; camY = PH * .25; }
+  function centre(){ camX = (PW || 1000) * .3; camY = (PH || 1000) * .25; }
 
   /* ---- virtualised cells: only what's on screen exists in the DOM ---- */
   const live = new Map(), pool = [];
@@ -355,13 +358,17 @@ html[data-mode="dark"] .skel::after{background-image:linear-gradient(100deg,#231
   }
   function render(){
     const seen = new Set();
-    if (ROWS){
+    if (!P || !P.length || !PH || PH <= 0) return;
+    if (ROWS && ROWS.length > 0){
       const iy0 = Math.floor((camY - 400) / PH), iy1 = Math.floor((camY + vh) / PH);
+      if (!isFinite(iy0) || !isFinite(iy1)) return;
       for (let iy = iy0; iy <= iy1; iy++) ROWS.forEach((row, ri) => {
         const ry = row.y + iy * PH - camY;
         if (ry + row.H < -40 || ry > vh + 40) return;
+        if (!row.L || row.L <= 0) return;
         const base = camX + row.off;
         const ix0 = Math.floor((base - 400) / row.L), ix1 = Math.floor((base + vw) / row.L);
+        if (!isFinite(ix0) || !isFinite(ix1)) return;
         for (let ix = ix0; ix <= ix1; ix++) row.cells.forEach((c, k) => {
           const x = c.x + ix * row.L - base, y = ry + c.y;
           if (x + c.w < -40 || x > vw + 40) return;
@@ -377,8 +384,10 @@ html[data-mode="dark"] .skel::after{background-image:linear-gradient(100deg,#231
       for (const [key, el] of live) if (!seen.has(key)){ live.delete(key); el.style.display = 'none'; pool.push(el); }
       return;
     }
+    if (!PW || PW <= 0) return;
     const ix0 = Math.floor((camX - 400) / PW), ix1 = Math.floor((camX + vw) / PW);
     const iy0 = Math.floor((camY - 400) / PH), iy1 = Math.floor((camY + vh) / PH);
+    if (!isFinite(ix0) || !isFinite(ix1) || !isFinite(iy0) || !isFinite(iy1)) return;
     for (let ix = ix0; ix <= ix1; ix++) for (let iy = iy0; iy <= iy1; iy++){
       for (let k = 0; k < patch.length; k++){
         const c = patch[k];

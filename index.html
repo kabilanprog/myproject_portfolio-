@@ -2505,7 +2505,7 @@ const toggleMode = () => setMode(getMode() === 'dark' ? 'light' : 'dark');
     // as the dark fills the screen, the room takes over (same black, so it's invisible) and the photos start to float in
     function handoff(){
       pick(i);
-      if (frameReady || frames[i]){
+      if (frameReady){
         wallv.classList.add('on');
         setTimeout(() => {
           inWall = true;
