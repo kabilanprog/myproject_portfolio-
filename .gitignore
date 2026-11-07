@@ -49,6 +49,7 @@ __pycache__/
 # Temporary / build artifacts
 *.tmp
 .cache/
-dist/
-build/
+/dist/
+/build/
+!vendor/three/build/
 
