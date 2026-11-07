@@ -937,7 +937,7 @@ if(m<=2||c<=2||s)document.documentElement.classList.add('lite');})();
 <meta name="google-site-verification" content="dB3k2roAkI1S8861shwLsjVKNyl1q-TjchYYJWrG-18" />
 
 
-<style id="permanent-instant-load">
+<style id="layout-safeguards">
   html {
     scroll-behavior: smooth;
     overflow-x: clip;
@@ -945,24 +945,8 @@ if(m<=2||c<=2||s)document.documentElement.classList.add('lite');})();
   body {
     overflow-x: clip;
     min-height: 100vh;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-  .loader { display: none !important; }
-  .rv {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-  }
-  .line > span {
-    transform: none !important;
-    opacity: 1 !important;
   }
   @media (max-width: 1023.98px) {
-    .fig {
-      opacity: 1 !important;
-      transform: translate(-50%, 0) !important;
-    }
     .h1 {
       font-size: clamp(2rem, 9.5vw, 2.625rem) !important;
     }
@@ -970,20 +954,31 @@ if(m<=2||c<=2||s)document.documentElement.classList.add('lite');})();
       max-width: calc(100vw - 2.5rem);
     }
   }
-  @media (min-width: 1024px) {
-    .fig {
-      opacity: 1 !important;
-      transform: none !important;
-    }
-  }
 </style>
 </head>
-<body class="ready">
+<body>
 
 <a class="skip" href="#main">Skip to content</a>
 
 <!-- ============ PageLoader ============ -->
-<!-- PageLoader completely removed for instant 0s load -->
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="ld__bg"></div>
+  <div class="ld__stack">
+    <div class="ld__pill" style="--k:0;--c:#1F1C1C;--t:#E8E4E0;--dir:1"><span>Kabilan</span></div>
+    <div class="ld__pill" style="--k:1;--c:#22304a;--t:#E8E4E0;--dir:-1"><span>Web development</span></div>
+    <div class="ld__pill" style="--k:2;--c:#4a3540;--t:#E8E4E0;--dir:1"><span>App development</span></div>
+    <div class="ld__pill" style="--k:3;--c:#7a8670;--t:#F3EEEC;--dir:-1"><span>UI/UX design</span></div>
+    <div class="ld__pill" style="--k:4;--c:#a4552c;--t:#F3EEEC;--dir:1"><span>Graphic design</span></div>
+    <div class="ld__pill" style="--k:5;--c:#C4B0B0;--t:#1A1818;--dir:-1"><span>Photography</span></div>
+  </div>
+  <div class="ld__hud">
+    <div class="ld__top"><span><b>Kabilan</b> · Portfolio</span><span>Web · App · UI/UX · Graphic design</span></div>
+    <div class="ld__bot">
+      <p class="ld__num"><small>Opening up the work</small><span id="ldCount">000</span></p>
+      <div class="ld__bar"><i></i></div>
+    </div>
+  </div>
+</div>
 
 <!-- ============ Header ============ -->
 <header class="hdr rv">
@@ -2592,16 +2587,64 @@ const toggleMode = () => setMode(getMode() === 'dark' ? 'light' : 'dark');
   });
 })();
 
-/* Immediate readiness */
-document.body.classList.add('ready');
-window.addEventListener('DOMContentLoaded', () => {
+/* ---------- PageLoader: the doors' colours stack up as the page loads, then slides apart to open it ---------- */
+const loader = $('#loader');
+// back from a door's page (#works): skip the intro and stand in front of the doors again
+// (#about and #contact come from the links in a room's navbar and footer)
+if (['#works', '#about', '#contact'].includes(location.hash)){
+  loader?.remove();
   document.body.classList.add('ready');
-  window.dispatchEvent(new Event('intro:ready'));
-});
-setTimeout(() => {
+  const wantContact = location.hash === '#contact';
+  requestAnimationFrame(() => {
+    if (wantContact) setTimeout(() => openModal(), 400);
+    const el = $(location.hash === '#about' ? '#about' : '#works');
+    if (el) window.scrollTo(0, el.getBoundingClientRect().top + pageYOffset);
+    dispatchEvent(new Event('intro:ready'));
+  });
+} else if (loader) {
+  stopScroll();
+  // whatever happens in the intro, the site always opens: any error, or an intro that hasn't finished in 9 s, lets you straight in
+  let introDone = false;
+  const bailOut = () => {
+    if (introDone) return; introDone = true;
+    try { loader.remove(); } catch (e) {}
+    document.body.classList.add('ready'); startScroll(); dispatchEvent(new Event('intro:ready'));
+  };
+  window.__introBail = bailOut;
+  setTimeout(bailOut, 9000);
+  try {
+  const num = $('#ldCount'), pills = [...loader.querySelectorAll('.ld__pill')];
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // real progress: fonts first, then the page's images; the counter never runs ahead of what has actually loaded
+  let ready = .55;
+  document.fonts?.ready.then(() => { ready = Math.max(ready, .85); });
+  const loaded = () => { ready = 1; };
+  if (document.readyState === 'complete') loaded(); else addEventListener('load', loaded, { once: true });
+  setTimeout(loaded, 5000);                               // never keep anyone waiting long
+  // one colour joins the stack for each sixth of the way
+  const paint = p => { loader.style.setProperty('--p', p.toFixed(3)); pills.forEach((el, k) => el.classList.toggle('on', p >= k / 6 + .02 || p >= 1)); };
+  const FILL = 1600;
+  let t0 = null, shown = 0;
+  function loadTick(now){
+    if (t0 === null) t0 = now;
+    const want = Math.min(ease(Math.min(1, (now - t0) / FILL)), ready);
+    shown += (want - shown) * .18; if (want - shown < .002) shown = want;
+    paint(shown);
+    num.textContent = String(Math.round(shown * 100)).padStart(3, '0');
+    if (shown < 1) requestAnimationFrame(t => { try { loadTick(t); } catch (e) { bailOut(); } }); else setTimeout(finish, 520);   // the last colour lands, then it opens
+  }
+  function finish(){
+    loader.classList.add('out');                             // the colours slide away and the curtain lifts
+    setTimeout(() => document.body.classList.add('ready'), 260);   // the hero plays its entrance as it is uncovered
+    setTimeout(bailOut, 1250);
+  }
+  if (reduced){ num.textContent = '100'; paint(1); setTimeout(finish, 500); }
+  else requestAnimationFrame(t => { try { loadTick(t); } catch (e) { bailOut(); } });
+  } catch (e) { bailOut(); }
+} else {
   document.body.classList.add('ready');
-  window.dispatchEvent(new Event('intro:ready'));
-}, 50);
+  dispatchEvent(new Event('intro:ready'));
+}
 
 
 /* ---------- Clean routes: the address bar reads /home, /work or /my-story as you move through the page ---------- */
